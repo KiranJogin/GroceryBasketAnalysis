@@ -1,0 +1,483 @@
+/* Exact same CSS as original Streamlit app */
+:root {
+    --primary: #2563eb;
+    --primary-soft: #dbeafe;
+    --accent: #10b981;
+    --background: #f8fafc;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+html {
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    padding-top: 90px;
+}
+
+.main-content {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 14px 34px rgba(37, 99, 235, 0.25);
+}
+
+.hero-card h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.metric-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 170px;
+    background: var(--card);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    padding: 1.35rem;
+    border-radius: 16px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-card::after {
+    content: "";
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    right: -42px;
+    top: -42px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.metric-card:hover {
+    border-color: rgba(37, 99, 235, 0.42);
+    box-shadow: 0 22px 46px rgba(15, 23, 42, 0.12);
+    transform: translateY(-3px);
+}
+
+.metric-topline,
+.metric-foot,
+.metric-mini-list div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-soft);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: var(--primary);
+    flex: 0 0 auto;
+}
+
+.metric-chip {
+    color: var(--text-muted);
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.metric-body {
+    position: relative;
+    z-index: 1;
+    margin-top: 1.2rem;
+}
+
+.metric-card h3 {
+    margin: 0;
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    line-height: 1.1;
+    font-weight: 800;
+    color: var(--text-main);
+    word-break: break-word;
+}
+
+.metric-card p {
+    margin: 0.35rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+}
+
+.metric-foot {
+    position: relative;
+    z-index: 1;
+    margin-top: 1rem;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.metric-foot i {
+    color: var(--primary);
+}
+
+.metric-card-primary,
+.metric-card-success,
+.metric-card-info,
+.metric-card-warning,
+.metric-card-profit {
+    grid-column: span 2;
+}
+
+.metric-card-success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 72%);
+}
+
+.metric-card-success .metric-icon,
+.metric-card-success .metric-foot i {
+    color: #059669;
+    background: #d1fae5;
+}
+
+.metric-card-info {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 72%);
+}
+
+.metric-card-info .metric-icon,
+.metric-card-info .metric-foot i {
+    color: #0284c7;
+    background: #dbeafe;
+}
+
+.metric-card-warning {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 72%);
+}
+
+.metric-card-warning .metric-icon,
+.metric-card-warning .metric-foot i {
+    color: #ea580c;
+    background: #ffedd5;
+}
+
+.metric-card-profit {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 72%);
+}
+
+.metric-card-profit .metric-icon,
+.metric-card-profit .metric-foot i {
+    color: #7c3aed;
+    background: #ede9fe;
+}
+
+.metric-card-compact {
+    grid-column: span 2;
+    background: #111827;
+    border-color: #111827;
+    color: white;
+}
+
+.metric-card-compact::after {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.metric-card-compact h3,
+.metric-card-compact p {
+    color: white;
+}
+
+.metric-mini-list {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.metric-mini-list div {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+}
+
+.metric-mini-list span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 14px 32px rgba(0,0,0,0.1);
+}
+
+.dashboard-chart {
+    width: 100%;
+    min-height: 360px;
+}
+
+.coupon-feedback {
+    min-height: 1.25rem;
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+.btn-primary {
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.login-container {
+    min-height: calc(100vh - 80px); /* account for navbar */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2rem 1rem;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    background: inherit; /* match body gradient */
+}
+
+.login-container > .row {
+    width: 100%;
+    max-width: 720px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.login-card {
+    background: var(--card);
+    padding: 3.5rem 3rem;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+    max-width: 550px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+.table-dark th {
+    color: white !important;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+    border-color: rgba(255,255,255,0.1);
+}
+
+.table thead th {
+    border-bottom: 2px solid rgba(255,255,255,0.15);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.navbar {
+    background: linear-gradient(135deg, rgba(17,24,39,0.95) 0%, rgba(31,41,55,0.95) 50%, rgba(17,24,39,0.98) 100%);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(255,255,255,0.05);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.navbar-brand {
+    font-size: 1.6rem !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.02);
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255,255,255,0.92) !important;
+    font-weight: 500;
+    padding: 0.75rem 1.2rem !important;
+    margin: 0 0.25rem;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+
+.navbar-nav .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.navbar-nav .nav-link:hover::before {
+    left: 100%;
+}
+
+.navbar-nav .nav-link:hover {
+    color: white !important;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.navbar-nav .nav-link.active {
+    background: linear-gradient(135deg, rgba(96,165,250,0.4), rgba(167,139,250,0.4)) !important;
+    box-shadow: 0 0 25px rgba(96,165,250,0.6) !important;
+    border: 1px solid rgba(96,165,250,0.5) !important;
+}
+
+.navbar-toggler {
+    border: none;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.25);
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    background: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(16,185,129,0.1) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 20px 60px rgba(37,99,235,0.15);
+}
+
+.dashboard-header h1 {
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #2563eb, #10b981, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header .subtitle {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.dashboard-header .badge {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .hero-card h1 {
+        font-size: 2rem;
+    }
+
+    .dashboard-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-card-primary,
+    .metric-card-success,
+    .metric-card-info,
+    .metric-card-warning,
+    .metric-card-profit,
+    .metric-card-compact {
+        grid-column: span 1;
+    }
+    
+    .login-card {
+        padding: 2.5rem 2rem;
+        margin: 1rem;
+        max-width: 90vw;
+    }
+    
+    .main-content {
+        padding: 2rem 1rem;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+    .dashboard-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric-card-primary,
+    .metric-card-success,
+    .metric-card-info,
+    .metric-card-warning,
+    .metric-card-profit,
+    .metric-card-compact {
+        grid-column: span 1;
+    }
+}

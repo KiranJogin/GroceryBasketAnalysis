@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Coupon Management - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <ul class="nav nav-tabs" id="couponTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="create-tab" data-bs-toggle="tab" href="#create" role="tab">Create Coupon</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="manage-tab" data-bs-toggle="tab" href="#manage" role="tab">Manage Coupons</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="guide-tab" data-bs-toggle="tab" href="#guide" role="tab">Usage Guide</a>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="couponTabContent">
+        <!-- Create Coupon -->
+        <div class="tab-pane fade show active" id="create" role="tabpanel">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Create New Coupon</h5>
+                    <form id="create_coupon_form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>Coupon Code</label>
+                                <input type="text" class="form-control" id="new_coupon_code" 
+                                       placeholder="SAVE20" maxlength="10" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Discount %</label>
+                                <input type="number" class="form-control" id="new_discount" 
+                                       min="1" max="90" value="10" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Min Purchase ₹</label>
+                                <input type="number" class="form-control" id="new_min_purchase" 
+                                       min="0" value="1000" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Status</label>
+                                <select class="form-select" id="new_active">
+                                    <option value="1">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success mt-3">
+                            <i class="fas fa-plus me-2"></i>Create Coupon
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Coupons -->
+        <div class="tab-pane fade" id="manage" role="tabpanel">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Existing Coupons</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="coupons_table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Discount</th>
+                                    <th>Min Purchase</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for coupon in coupons %}
+                                <tr data-coupon="{{ coupon.coupon_code }}">
+                                    <td><code>{{ coupon.coupon_code }}</code></td>
+                                    <td>{{ coupon.discount_percent }}%</td>
+                                    <td>₹{{ "%.0f"|format(coupon.min_purchase) }}</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-success' if coupon.active else 'bg-secondary' }}">
+                                            {{ 'Active' if coupon.active else 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-success toggle-active" data-active="1">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning toggle-active" data-active="0">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger delete-coupon">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guide -->
+        <div class="tab-pane fade" id="guide" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>How Coupon Engine Works</h6>
+                            <p>Coupons apply automatically during <strong>Smart Checkout</strong>.</p>
+                            
+                            <div class="alert alert-info">
+                                <strong>Example:</strong> SAVE20 (20% off, min ₹1500)
+                                <ul class="mt-2 mb-0">
+                                    <li>₹1800 basket → <strong>₹360 discount</strong> → ₹1440 final</li>
+                                    <li>₹1200 basket → <strong>No discount</strong> (min not met)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Suggested Coupon Codes</h6>
+                            <div class="row text-center">
+                                <div class="col-6 mb-2"><code>WELCOME10</code></div>
+                                <div class="col-6 mb-2"><code>STUDENT15</code></div>
+                                <div class="col-6 mb-2"><code>BIGBASKET20</code></div>
+                                <div class="col-6 mb-2"><code>SUMMER25</code></div>
+                                <div class="col-6 mb-2"><code>FESTIVE30</code></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('create_coupon_form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = {
+        action: 'create',
+        coupon_code: document.getElementById('new_coupon_code').value.toUpperCase(),
+        discount: parseInt(document.getElementById('new_discount').value),
+        min_purchase: parseFloat(document.getElementById('new_min_purchase').value),
+        active: document.getElementById('new_active').value
+    };
+    
+    const result = await GroceryAPI.post('/coupons', data);
+    if (result.success) {
+        showToast(`Coupon ${data.coupon_code} created!`, 'success');
+        location.reload();
+    } else {
+        showToast('Coupon creation failed', 'error');
+    }
+});
+
+document.querySelectorAll('.toggle-active').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const row = this.closest('tr');
+        const couponCode = row.dataset.coupon;
+        const active = parseInt(this.dataset.active);
+        
+        const result = await GroceryAPI.post('/coupons', {
+            action: 'update_status',
+            coupon_code: couponCode,
+            active: active
+        });
+        
+        if (result.success) {
+            const statusBadge = row.querySelector('.badge');
+            statusBadge.textContent = active ? 'Active' : 'Inactive';
+            statusBadge.className = `badge ${active ? 'bg-success' : 'bg-secondary'}`;
+            showToast(`${couponCode} ${active ? 'activated' : 'deactivated'}`, active ? 'success' : 'warning');
+        }
+    });
+});
+
+document.querySelectorAll('.delete-coupon').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        if (!confirm('Delete this coupon?')) return;
+        
+        const row = this.closest('tr');
+        const couponCode = row.dataset.coupon;
+        
+        const result = await GroceryAPI.post('/coupons', {
+            action: 'delete',
+            coupon_code: couponCode
+        });
+        
+        if (result.success) {
+            row.remove();
+            showToast(`${couponCode} deleted`, 'success');
+        }
+    });
+});
+</script>
+{% endblock %}

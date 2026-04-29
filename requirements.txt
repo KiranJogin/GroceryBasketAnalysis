@@ -1,0 +1,17 @@
+# Core Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Data Processing
+pandas==2.1.4
+numpy==1.24.3
+
+# Database
+sqlite3  # Built-in Python
+
+# Charts & Visualization
+plotly==5.17.0
+
+# File handling & Utilities
+python-dateutil==2.8.2
+six==1.16.0

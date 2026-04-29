@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Checkout - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4><i class="fas fa-shopping-cart text-primary me-2"></i>Smart Checkout</h4>
+
+                    <form id="checkout_form" data-skip-global-handler="true">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label>Customer ID</label>
+                                <input type="text" class="form-control" name="customer_id"
+                                       value="CUS{{ '%04d'|format(1000 + range(0,9999)|random) }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Basket Date</label>
+                                <input type="date" class="form-control" name="basket_date"
+                                       value="{{ current_date }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Payment Method</label>
+                                <select class="form-select" name="payment_method" required>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Card">Card</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Wallet">Wallet</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Coupon Code</label>
+                                <select class="form-select" id="coupon_code" name="coupon_code">
+                                    <option value="">No Coupon</option>
+                                    {% for coupon in coupons %}
+                                    <option value="{{ coupon.coupon_code }}" data-min="{{ coupon.min_purchase }}">
+                                        {{ coupon.coupon_code }} ({{ coupon.discount_percent }}% off, min ₹{{ "%.0f"|format(coupon.min_purchase) }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div id="coupon_feedback" class="coupon-feedback mt-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="product-selector">
+                            <h6>Select Products:</h6>
+                            <div class="row mb-3">
+                                {% for product in products %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="product-card">
+                                        <div class="form-check">
+                                            <input class="form-check-input product-checkbox"
+                                                   type="checkbox" value="{{ product.product_id }}"
+                                                   id="prod_{{ product.product_id }}"
+                                                   data-price="{{ product.price }}"
+                                                   data-name="{{ product.product_name }}">
+                                            <label class="form-check-label" for="prod_{{ product.product_id }}">
+                                                <strong>{{ product.product_name }}</strong><br>
+                                                <small class="text-muted">{{ product.category }} &bull; &#8377;{{ "%.2f"|format(product.price) }}</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100" id="submit_btn" disabled>
+                            <i class="fas fa-check me-2"></i>Create Transaction (Min 2 items)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-body">
+                    <h6><i class="fas fa-basket-shopping text-primary me-2"></i>Basket Preview</h6>
+                    <div id="preview_table" class="preview-container">
+                        <p class="text-muted">Select products to preview...</p>
+                    </div>
+                    <hr>
+                    <div class="text-end">
+                        <h5 id="gross_total">&#8377;0.00</h5>
+                        <small>Estimated Discount: <span id="discount_amount">&#8377;0.00</span></small><br>
+                        <small><strong>Final: <span id="final_amount">&#8377;0.00</span></strong></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currency = '\u20b9';
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    const previewContainer = document.getElementById('preview_table');
+    const submitBtn = document.getElementById('submit_btn');
+    const checkoutForm = document.getElementById('checkout_form');
+    const couponInput = document.getElementById('coupon_code');
+    const couponFeedback = document.getElementById('coupon_feedback');
+    const grossTotal = document.getElementById('gross_total');
+    const discountAmount = document.getElementById('discount_amount');
+    const finalAmount = document.getElementById('final_amount');
+    let selectedCount = 0;
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedCount++;
+                addToPreview(this);
+            } else {
+                selectedCount--;
+                removeFromPreview(this.value);
+            }
+            updateSubmitButton();
+            updateGrandTotal();
+        });
+    });
+
+function addToPreview(checkbox) {
+        const productId = checkbox.value;
+        let row = previewContainer.querySelector(`[data-product-id="${productId}"]`);
+        
+        if (row) {
+            // Update existing row qty
+            const qtyInput = row.querySelector('.qty-input');
+            qtyInput.value = 1;  // Reset to 1 for first selection
+            updatePreviewTotal(row);
+        } else {
+            // Add new row
+            if (previewContainer.querySelector('.text-muted')) {
+                previewContainer.innerHTML = '';
+            }
+
+            row = document.createElement('div');
+            row.className = 'product-row row align-items-center mb-2 p-2 border rounded';
+            row.dataset.productId = productId;
+            row.dataset.price = checkbox.dataset.price;
+            row.innerHTML = `
+                <div class="col-6">
+                    <strong>${checkbox.dataset.name}</strong>
+                </div>
+                <div class="col-3">
+                    <input type="number" class="form-control qty-input" value="1" min="1" max="10" style="width: 70px;">
+                </div>
+                <div class="col-3 text-end">
+                    <span class="line-total">${currency}${parseFloat(checkbox.dataset.price).toFixed(2)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-item">
+                        <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+            previewContainer.appendChild(row);
+            attachQtyListeners(row);
+            attachRemoveListener(row);
+        }
+        updateGrandTotal();
+    }
+
+    function attachQtyListeners(row) {
+        row.querySelector('.qty-input').addEventListener('input', function() {
+            updatePreviewTotal(row);
+            updateGrandTotal();
+        });
+    }
+
+    function attachRemoveListener(row) {
+        row.querySelector('.remove-item').addEventListener('click', function() {
+            const checkbox = document.querySelector(`#prod_${row.dataset.productId}`);
+            checkbox.checked = false;
+            row.remove();
+            selectedCount--;
+            if (selectedCount === 0) {
+                previewContainer.innerHTML = '<p class="text-muted">Select products to preview...</p>';
+            }
+            updateSubmitButton();
+            updateGrandTotal();
+        });
+    }
+
+    function removeFromPreview(productId) {
+        const row = previewContainer.querySelector(`[data-product-id="${productId}"]`);
+        if (row) {
+            row.remove();
+        }
+        if (selectedCount === 0) {
+            previewContainer.innerHTML = '<p class="text-muted">Select products to preview...</p>';
+        }
+    }
+
+    function updatePreviewTotal(row) {
+        const qtyInput = row.querySelector('.qty-input');
+        const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+        qtyInput.value = qty;
+        const total = qty * parseFloat(row.dataset.price);
+        row.querySelector('.line-total').textContent = `${currency}${total.toFixed(2)}`;
+    }
+
+    async function updateGrandTotal() {
+        const subtotal = [...previewContainer.querySelectorAll('.product-row')].reduce((sum, row) => {
+            const qty = Math.max(1, parseInt(row.querySelector('.qty-input').value, 10) || 1);
+            return sum + (qty * parseFloat(row.dataset.price));
+        }, 0);
+        let discount = 0;
+        setCouponFeedback('', 'muted');
+
+        // Filter coupon options based on subtotal
+        const couponSelect = document.getElementById('coupon_code');
+        Array.from(couponSelect.options).forEach(option => {
+            if (option.dataset.min && parseFloat(option.dataset.min) > subtotal) {
+                option.disabled = true;
+                option.style.opacity = '0.5';
+            } else {
+                option.disabled = false;
+                option.style.opacity = '1';
+            }
+        });
+
+        const selectedCoupon = couponSelect.value;
+        if (selectedCoupon && subtotal > 0) {
+            const response = await fetch('/api/checkout/validate_coupon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({total: subtotal, coupon_code: selectedCoupon})
+            });
+            const result = await response.json();
+            discount = Number(result.discount || 0);
+            setCouponFeedback(result.message, discount > 0 ? 'success' : 'warning');
+        }
+
+        grossTotal.textContent = `${currency}${subtotal.toFixed(2)}`;
+        discountAmount.textContent = `${currency}${discount.toFixed(2)}`;
+        finalAmount.textContent = `${currency}${Math.max(0, subtotal - discount).toFixed(2)}`;
+    }
+
+    function setCouponFeedback(message, type) {
+        couponFeedback.textContent = message;
+        couponFeedback.className = `coupon-feedback text-${type || 'muted'}`;
+    }
+
+    function updateSubmitButton() {
+        submitBtn.disabled = selectedCount < 2;
+        submitBtn.innerHTML = selectedCount < 2 ?
+            '<i class="fas fa-exclamation-triangle me-2"></i>Select at least 2 products' :
+            '<i class="fas fa-check me-2"></i>Create Transaction';
+    }
+
+    couponInput.addEventListener('input', updateGrandTotal);
+
+    checkoutForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const selectedProducts = [...previewContainer.querySelectorAll('.product-row')].map(row => [
+            row.dataset.productId,
+            Math.max(1, parseInt(row.querySelector('.qty-input').value, 10) || 1)
+        ]);
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Transaction...';
+
+        const response = await fetch('/api/checkout/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                customer_id: checkoutForm.customer_id.value,
+                basket_date: checkoutForm.basket_date.value,
+                payment_method: checkoutForm.payment_method.value,
+                coupon_code: checkoutForm.coupon_code.value,
+                selected_products: selectedProducts
+            })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error || 'Could not create transaction.');
+            updateSubmitButton();
+            return;
+        }
+
+        window.location.href = result.receipt_url;
+    });
+});
+</script>
+{% endblock %}

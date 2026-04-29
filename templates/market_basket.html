@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Market Basket AI - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4><i class="fas fa-brain text-warning me-2"></i>Market Basket AI</h4>
+                    <p class="text-muted mb-4">Top product affinity pairs (Apriori Algorithm)</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover datatable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Base Product</th>
+                                    <th>Recommended</th>
+                                    <th>Support</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pair in top_pairs %}
+                                <tr>
+                                    <td><strong>{{ pair.base_product }}</strong></td>
+                                    <td>{{ pair.recommended_product }}</td>
+                                    <td><span class="badge bg-info">{{ "%.3f"|format(pair.support_score) }}</span></td>
+                                    <td>
+                                        <div class="progress" style="height: 25px;">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ (pair.confidence_score * 100)|round(1) }}%">
+                                                {{ "%.1f"|format(pair.confidence_score * 100) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Confidence vs Support Scatter</h5>
+                    <div id="scatter-chart" style="height: 400px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="fas fa-lightbulb text-primary me-2"></i>AI Business Insights</h5>
+                    <div class="row">
+                        {% for pair in top_pairs[:8] %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="alert alert-info">
+                                <strong>If buys:</strong> {{ pair.base_product }}<br>
+                                <strong>Recommend:</strong> {{ pair.recommended_product }}<br>
+                                <small class="text-success">Confidence: {{ "%.1f"|format(pair.confidence_score * 100) }}%</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+Plotly.newPlot('scatter-chart', [{
+    x: {{ chart_data|safe }}.map(d => d.support_score),
+    y: {{ chart_data|safe }}.map(d => d.confidence_score),
+    mode: 'markers+text',
+    text: {{ chart_data|safe }}.map(d => d.base_product),
+    textposition: 'top center',
+    marker: {
+        size: {{ chart_data|safe }}.map(d => d.confidence_score * 100),
+        color: '#10b981',
+        opacity: 0.7
+    },
+    type: 'scatter',
+    hovertemplate: '<b>%{text}</b><br>Support: %{x:.3f}<br>Confidence: %{y:.3f}<extra></extra>'
+}], {
+    title: 'Market Basket Analysis',
+    xaxis: {title: 'Support Score'},
+    yaxis: {title: 'Confidence Score'},
+    showlegend: false,
+    height: 400
+});
+</script>
+{% endblock %}

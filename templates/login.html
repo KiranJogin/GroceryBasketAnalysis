@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="login-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-shopping-basket fa-3x text-primary mb-3"></i>
+                    <h2>Grocery Basket Analytics</h2>
+                    <p class="text-muted">Enterprise Retail Intelligence Platform</p>
+                </div>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="login-tab">
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Admin: admin@grocery.com / admin123</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('register') }}" class="text-decoration-none">Create Account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

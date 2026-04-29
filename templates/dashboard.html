@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block hero %}
+<div class="hero-section dashboard-hero">
+    <div class="container">
+        <div class="hero-card">
+            <h1 class="display-5 fw-bold text-white">
+                <i class="fas fa-shopping-basket"></i> Grocery Basket Analytics Enterprise
+            </h1>
+            <p>Welcome, <strong>{{ user.user_name }}</strong> • Role: {{ user.user_role.title() }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1><i class="fas fa-tachometer-alt me-3"></i>Dashboard Overview</h1>
+                <p class="subtitle">Monitor sales, revenue, and business metrics in real-time</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <span class="badge">Live Data</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <!-- Metrics -->
+    <div class="dashboard-kpi-grid mb-4">
+        <div class="metric-card metric-card-primary">
+            <div class="metric-topline">
+                <div class="metric-icon"><i class="fas fa-receipt"></i></div>
+                <span class="metric-chip">Orders</span>
+            </div>
+            <div class="metric-body">
+                <h3>{{ metrics.total_txn }}</h3>
+                <p>Transactions</p>
+            </div>
+            <div class="metric-foot">
+                <i class="fas fa-arrow-trend-up"></i>
+                <span>Live basket activity</span>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-success">
+            <div class="metric-topline">
+                <div class="metric-icon"><i class="fas fa-indian-rupee-sign"></i></div>
+                <span class="metric-chip">Revenue</span>
+            </div>
+            <div class="metric-body">
+                <h3>{{ metrics.total_sales }}</h3>
+                <p>Net Sales</p>
+            </div>
+            <div class="metric-foot">
+                <i class="fas fa-circle-check"></i>
+                <span>After discounts</span>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-info">
+            <div class="metric-topline">
+                <div class="metric-icon"><i class="fas fa-cash-register"></i></div>
+                <span class="metric-chip">Gross</span>
+            </div>
+            <div class="metric-body">
+                <h3>{{ metrics.gross_sales }}</h3>
+                <p>Gross Sales</p>
+            </div>
+            <div class="metric-foot">
+                <i class="fas fa-chart-column"></i>
+                <span>Before discounts</span>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-warning">
+            <div class="metric-topline">
+                <div class="metric-icon"><i class="fas fa-basket-shopping"></i></div>
+                <span class="metric-chip">Basket</span>
+            </div>
+            <div class="metric-body">
+                <h3>{{ metrics.avg_basket }}</h3>
+                <p>Average Basket</p>
+            </div>
+            <div class="metric-foot">
+                <i class="fas fa-scale-balanced"></i>
+                <span>Per transaction</span>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-profit">
+            <div class="metric-topline">
+                <div class="metric-icon"><i class="fas fa-sack-dollar"></i></div>
+                <span class="metric-chip">Margin</span>
+            </div>
+            <div class="metric-body">
+                <h3>{{ metrics.total_profit }}</h3>
+                <p>Total Profit</p>
+            </div>
+            <div class="metric-foot">
+                <i class="fas fa-chart-line"></i>
+                <span>Estimated margin</span>
+            </div>
+        </div>
+
+        <div class="metric-card metric-card-compact">
+            <div class="metric-body">
+                <h3>Retail Pulse</h3>
+                <p>Sales, baskets, and profitability at a glance</p>
+            </div>
+            <div class="metric-mini-list">
+                <div>
+                    <span>Coverage</span>
+                    <strong>Full Store</strong>
+                </div>
+                <div>
+                    <span>Status</span>
+                    <strong>Active</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Sales Trend</h5>
+                    <div id="sales-trend-chart" class="dashboard-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Category Revenue</h5>
+                    <div id="category-pie-chart" class="dashboard-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Transactions</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for txn in recent_txns %}
+                                <tr>
+                                    <td>{{ txn.transaction_id }}</td>
+                                    <td>{{ txn.customer_id }}</td>
+                                    <td>{{ txn.basket_date }}</td>
+                                    <td>₹{{ "%.2f"|format(txn.final_amount) }}</td>
+                                    <td><span class="badge bg-primary">{{ txn.payment_method }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="application/javascript">
+(function(){
+    var dashboardCharts = {{ charts|tojson|safe }};
+    Plotly.newPlot('sales-trend-chart', dashboardCharts.sales_trend.data, dashboardCharts.sales_trend.layout, {"responsive": true, "displayModeBar": false});
+    Plotly.newPlot('category-pie-chart', dashboardCharts.category_pie.data, dashboardCharts.category_pie.layout, {"responsive": true, "displayModeBar": false});
+})();
+</script>
+{% endblock %}
+

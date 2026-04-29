@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt Center - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="fas fa-receipt text-primary me-2"></i>Receipt / Invoice Center</h4>
+        <a href="{{ url_for('checkout') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>New Transaction
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <select class="form-select" id="txn_filter" onchange="filterTransactions()">
+                <option value="">All Transactions ({{ transactions|length }})</option>
+                <option value="today">Today</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last 30 Days</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="txn_search" placeholder="Search transaction ID..." 
+                   onkeyup="filterTransactions()">
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <select class="form-select" id="payment_filter">
+                    <option value="">All Payments</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Wallet">Wallet</option>
+                </select>
+                <button class="btn btn-outline-secondary" onclick="filterTransactions()">Filter</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="transactions_list">
+        {% for txn in transactions %}
+        <div class="col-xl-4 col-lg-6 col-md-12 mb-4 txn-item" data-id="{{ txn.transaction_id }}"
+             data-customer="{{ txn.customer_id }}" data-payment="{{ txn.payment_method }}"
+             data-date="{{ txn.basket_date }}">
+            <div class="card h-100 receipt-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6 class="card-title">{{ txn.transaction_id }}</h6>
+                        <span class="badge bg-{{ 'success' if txn.payment_method == 'UPI' else 'primary' }}">
+                            {{ txn.payment_method }}
+                        </span>
+                    </div>
+                    <p class="text-muted mb-2">{{ txn.customer_id }}</p>
+                    <p class="mb-3"><small class="text-muted">{{ txn.basket_date }}</small></p>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong>₹{{ "%.2f"|format(txn.total_amount) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between text-success">
+                            <span>Discount:</span>
+                            <strong>-₹{{ "%.2f"|format(txn.discount_amount) }}</strong>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>Final:</strong>
+                            <h5 class="text-primary">₹{{ "%.2f"|format(txn.final_amount) }}</h5>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('receipt', txn_id=txn.transaction_id) }}" 
+                       class="btn btn-primary w-100">
+                        <i class="fas fa-eye me-2"></i>View Receipt
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not transactions %}
+    <div class="text-center py-5">
+        <i class="fas fa-receipt fa-5x text-muted mb-4"></i>
+        <h5>No transactions found</h5>
+        <a href="{{ url_for('checkout') }}" class="btn btn-primary">Create First Transaction</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function filterTransactions() {
+    const search = document.getElementById('txn_search').value.toLowerCase();
+    const payment = document.getElementById('payment_filter').value;
+    
+    document.querySelectorAll('.txn-item').forEach(item => {
+        const id = item.dataset.id.toLowerCase();
+        const customer = item.dataset.customer.toLowerCase();
+        const paymentType = item.dataset.payment;
+        const date = item.dataset.date;
+        
+        let show = true;
+        if (search && !id.includes(search) && !customer.includes(search)) show = false;
+        if (payment && payment !== paymentType) show = false;
+        
+        item.style.display = show ? 'block' : 'none';
+    });
+}
+</script>
+{% endblock %}

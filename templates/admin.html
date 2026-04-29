@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Database Admin - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="view-tab" data-bs-toggle="tab" href="#view" role="tab">Table Viewer</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="search-tab" data-bs-toggle="tab" href="#search" role="tab">Search</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="delete-tab" data-bs-toggle="tab" href="#delete" role="tab">Delete Record</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="export-tab" data-bs-toggle="tab" href="#export" role="tab">Export</a>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="adminTabContent">
+        <!-- Table Viewer -->
+        <div class="tab-pane fade show active" id="view" role="tabpanel">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" id="view_table">
+                        {% for table in tables %}
+                        <option value="{{ table }}">{{ table.title() }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary mt-2 w-100" onclick="loadAdminTable('view_table', 'view_table_data')">
+                        Load Table
+                    </button>
+                </div>
+                <div class="col-md-9">
+                    <div id="view_table_data" class="table-responsive">
+                        <p class="text-muted text-center py-5">Select a table to view</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="tab-pane fade" id="search" role="tabpanel">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" id="search_table">
+                        {% for table in tables %}
+                        <option value="{{ table }}">{{ table.title() }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" class="form-control mt-2" id="search_query" placeholder="Search keyword...">
+                    <button class="btn btn-primary mt-2 w-100" onclick="searchRecords()">
+                        Search
+                    </button>
+                </div>
+                <div class="col-md-9">
+                    <div id="search_results" class="table-responsive">
+                        <p class="text-muted text-center py-5">Enter search criteria</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete -->
+        <div class="tab-pane fade" id="delete" role="tabpanel">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" id="delete_table" onchange="loadAdminTable('delete_table', 'delete_preview')">
+                        {% for table in tables %}
+                        <option value="{{ table }}">{{ table.title() }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" class="form-control mt-2" id="delete_id" placeholder="Enter ID to delete">
+                    <button class="btn btn-outline-danger mt-2 w-100" onclick="previewDeleteRecord()">
+                        <i class="fas fa-eye me-2"></i>Preview & Delete
+                    </button>
+                </div>
+                <div class="col-md-9">
+                    <div id="delete_preview" class="table-responsive">
+                        <p class="text-muted text-center py-5">Select table and enter record ID</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export -->
+        <div class="tab-pane fade" id="export" role="tabpanel">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" id="export_table">
+                        {% for table in tables %}
+                        <option value="{{ table }}">{{ table.title() }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-success mt-2 w-100" onclick="exportTable()">
+                        <i class="fas fa-file-export me-2"></i>Export Table
+                    </button>
+                </div>
+                <div class="col-md-9">
+                    <div id="export_preview" class="table-responsive">
+                        <p class="text-muted text-center py-5">Select table to preview/export</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const pkMap = {
+    'users': 'id', 'products': 'product_id', 'transactions': 'transaction_id',
+    'transaction_items': 'item_id', 'recommendations': 'rec_id',
+    'alerts': 'alert_id', 'coupons': 'coupon_code'
+};
+
+function formatColumnName(name) {
+    return name.replace(/_/g, ' ').replace(/\\b(.)/g, m => m[1].toUpperCase());
+}
+
+function formatCellValue(value) {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') return value.toLocaleString();
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+}
+
+function convertToCSV(data) {
+    if (data.length === 0) return '';
+    const headers = Object.keys(data[0]);
+    const csv = [headers.join(',')];
+    data.forEach(row => csv.push(headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(',')));
+    return csv.join('\n');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+async function loadAdminTable(tableSelectId, containerId) {
+    const table = document.getElementById(tableSelectId).value;
+    const data = await fetch(`/api/admin/${table}`).then(r => r.json());
+    renderAdminTable(data, containerId);
+}
+
+function renderAdminTable(data, containerId) {
+    const container = document.getElementById(containerId);
+    if (data.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-5">No records found</p>';
+        return;
+    }
+    
+    const tableHTML = `
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>${Object.keys(data[0]).map(k => `<th>${formatColumnName(k)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+                ${data.slice(0, 50).map(row => 
+                    `<tr>${Object.values(row).map(v => `<td>${formatCellValue(v)}</td>`).join('')}</tr>`
+                ).join('')}
+            </tbody>
+        </table>
+        ${data.length > 50 ? '<p class="text-muted">Showing first 50 of ' + data.length + ' records</p>' : ''}
+    `;
+    container.innerHTML = tableHTML;
+}
+
+async function searchRecords() {
+    const table = document.getElementById('search_table').value;
+    const query = document.getElementById('search_query').value;
+    // Client-side search simulation - in production you'd do server-side
+    const data = await fetch(`/api/admin/${table}`).then(r => r.json());
+    const results = data.filter(row => 
+        JSON.stringify(row).toLowerCase().includes(query.toLowerCase())
+    );
+    renderAdminTable(results, 'search_results');
+}
+
+async function previewDeleteRecord() {
+    const table = document.getElementById('delete_table').value;
+    const id = document.getElementById('delete_id').value.trim();
+    
+    if (!id) {
+        showToast('Enter record ID first', 'warning');
+        return;
+    }
+    
+    const data = await fetch(`/api/admin/${table}`).then(r => r.json());
+    const record = data.find(row => String(row[pkMap[table] || 'id']) === id);
+    
+    if (record) {
+        if (confirm(`Delete this record from ${table}?\nID: ${id}\nData: ${JSON.stringify(record, null, 2)}`)) {
+            const result = await fetch('/api/admin/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({table, id})
+            }).then(r => r.json());
+            
+            if (result.success) {
+                showToast('Record deleted successfully', 'success');
+                loadAdminTable('delete_table', 'delete_preview');
+                document.getElementById('delete_id').value = '';
+            } else {
+                showToast('Delete failed: ' + result.error, 'error');
+            }
+        }
+    } else {
+        showToast('Record ID not found', 'warning');
+    }
+}
+
+async function exportTable() {
+    const table = document.getElementById('export_table').value;
+    const data = await fetch(`/api/admin/${table}`).then(r => r.json());
+    const csv = convertToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${table}.csv`;
+    a.click();
+    showToast(`${table}.csv exported`, 'success');
+}
+
+// Load first table on page load
+loadAdminTable('view_table', 'view_table_data');
+</script>
+{% endblock %}

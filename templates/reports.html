@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Reports - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5>Select Report</h5>
+                    <select class="form-select" id="report_type">
+                        <option value="products">Products Master</option>
+                        <option value="transactions">Transactions</option>
+                        <option value="items">Transaction Items</option>
+                        <option value="recommendations">Recommendations</option>
+                        <option value="alerts">Alerts</option>
+                        <option value="coupons">Coupons</option>
+                        <option value="basket">Merged Basket Dataset</option>
+                    </select>
+                    <button class="btn btn-primary mt-3 w-100" onclick="loadReport()">
+                        <i class="fas fa-download me-2"></i>Load Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 id="report_title">Select a report to view</h5>
+                        <div>
+                            <button class="btn btn-outline-success me-2" onclick="downloadCSV()">
+                                <i class="fas fa-file-csv me-1"></i>CSV
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard()">
+                                <i class="fas fa-copy me-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div id="report_table" class="table-responsive">
+                        <p class="text-muted text-center py-5">Choose a report from the sidebar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReportData = [];
+
+async function loadReport() {
+    const reportType = document.getElementById('report_type').value;
+    const titles = {
+        'products': 'Products Master',
+        'transactions': 'Transactions',
+        'items': 'Transaction Items',
+        'recommendations': 'Recommendations',
+        'alerts': 'Alerts',
+        'coupons': 'Coupons',
+        'basket': 'Merged Basket Dataset'
+    };
+    
+    document.getElementById('report_title').textContent = titles[reportType];
+    
+    try {
+        const data = await fetch(`/api/reports/${reportType}`).then(r => r.json());
+        currentReportData = data;
+        renderTable(data);
+    } catch (error) {
+        console.error('Error loading report:', error);
+    }
+}
+
+function renderTable(data) {
+    if (data.length === 0) {
+        document.getElementById('report_table').innerHTML = '<p class="text-muted text-center py-5">No data available</p>';
+        return;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'table table-hover datatable';
+    
+    if (data.length > 0) {
+        // Header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr class="table-dark">
+                ${Object.keys(data[0]).map(key => `<th>${formatColumnName(key)}</th>`).join('')}
+            </tr>
+        `;
+        table.appendChild(thead);
+        
+        // Body
+        const tbody = document.createElement('tbody');
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = Object.values(row).map(val => `<td>${formatCellValue(val)}</td>`).join('');
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+    }
+    
+    document.getElementById('report_table').innerHTML = '';
+    document.getElementById('report_table').appendChild(table);
+}
+
+function formatColumnName(name) {
+    return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function formatCellValue(value) {
+    if (typeof value === 'number' && value % 1 === 0) return value.toLocaleString();
+    if (typeof value === 'number' && value < 1) return (value * 100).toFixed(1) + '%';  // Scores as %
+    if (typeof value === 'number') return '₹' + value.toFixed(2);
+    return value || '';
+}
+
+function downloadCSV() {
+    if (currentReportData.length === 0) return;
+    
+    const csv = convertToCSV(currentReportData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${document.getElementById('report_type').value}.csv`;
+    a.click();
+}
+
+function convertToCSV(data) {
+    const headers = Object.keys(data[0]);
+    const csv = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => JSON.stringify(row[header])).join(','))
+    ].join('\n');
+    return csv;
+}
+
+function copyToClipboard() {
+    if (currentReportData.length === 0) return;
+    const csv = convertToCSV(currentReportData);
+    navigator.clipboard.writeText(csv).then(() => {
+        showToast('Report copied to clipboard!', 'success');
+    });
+}
+</script>
+{% endblock %}

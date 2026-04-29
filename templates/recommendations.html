@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendation Studio - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4><i class="fas fa-target text-success me-2"></i>Recommendation Studio</h4>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Select Base Product:</label>
+                        <select class="form-select" id="base_product">
+                            <option value="">Loading products...</option>
+                        </select>
+                    </div>
+
+                    <div id="recommendations_table">
+                        <p class="text-muted">Select a base product to see recommendations...</p>
+                    </div>
+
+                    <div id="rec_chart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Quick Stats</h5>
+                    <div id="stats_panel" class="text-muted">
+                        <p>Select a product to see personalized recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadRecommendations() {
+    const baseProduct = document.getElementById('base_product').value;
+    if (!baseProduct) return;
+
+    const recommendations = await fetch(`/api/recommendations/${encodeURIComponent(baseProduct)}`).then(r => r.json());
+    
+    // Update table
+    const tableContainer = document.getElementById('recommendations_table');
+    if (recommendations.length === 0) {
+        tableContainer.innerHTML = '<p class="text-muted">No recommendations found</p>';
+        return;
+    }
+
+    let tableHTML = `
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Recommended Product</th>
+                    <th>Support</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    recommendations.forEach(rec => {
+        tableHTML += `
+            <tr>
+                <td><strong>${rec.recommended_product}</strong></td>
+                <td>${(rec.support_score * 100).toFixed(1)}%</td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: ${(rec.confidence_score * 100).toFixed(1)}%">
+                            ${(rec.confidence_score * 100).toFixed(1)}%
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += '</tbody></table>';
+    tableContainer.innerHTML = tableHTML;
+
+    // Update chart
+    Plotly.newPlot('rec_chart', [{
+        y: recommendations.map(r => r.recommended_product),
+        x: recommendations.map(r => r.confidence_score),
+        type: 'bar',
+        orientation: 'h',
+        marker: {color: '#10b981'},
+        text: recommendations.map(r => (r.confidence_score * 100).toFixed(1) + '%'),
+        textposition: 'auto'
+    }], {
+        title: 'Recommendation Confidence',
+        xaxis: {title: 'Confidence Score'},
+        yaxis: {title: 'Products'},
+        height: 350
+    });
+}
+
+// Load base products
+fetch('/api/reports/recommendations')
+    .then(r => r.json())
+    .then(data => {
+        const baseProducts = [...new Set(data.map(d => d.base_product))].sort();
+        const select = document.getElementById('base_product');
+        select.innerHTML = '<option value="">Choose a product...</option>' + 
+            baseProducts.map(p => `<option value="${p}">${p}</option>`).join('');
+    });
+
+document.getElementById('base_product').addEventListener('change', loadRecommendations);
+</script>
+{% endblock %}

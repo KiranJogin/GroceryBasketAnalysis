@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Profit & Offers - Grocery Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Top 20 Profitable Products (Total ₹)</h5>
+                    <div id="profit_total_chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Top 20 Margin Products (%)</h5>
+                    <div id="profit_margin_chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-12 col-md-6 mb-4 mx-auto">
+            <div class="card mx-auto" style="max-width: 800px;">
+                <div class="card-body">
+                    <h5 class="text-center mb-3">⚠️ Low Stock Alert (Stock < 60)</h5>
+                    {% if low_stock %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-warning">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Stock</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock %}
+                                <tr>
+                                    <td>{{ item.product_name }}</td>
+                                    <td><strong class="text-danger">{{ item.stock }}</strong></td>
+                                    <td>₹{{ "%.2f"|format(item.price) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success text-center">✅ All products have sufficient stock!</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Active Coupons</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Discount</th>
+                                    <th>Min Purchase</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for coupon in coupons %}
+                                <tr>
+                                    <td><code>{{ coupon.coupon_code }}</code></td>
+                                    <td>{{ coupon.discount_percent }}%</td>
+                                    <td>₹{{ "%.0f"|format(coupon.min_purchase) }}</td>
+                                    <td>
+                                        {% if coupon.active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const profitData1 = {{ chart_data1|safe }};
+const profitData2 = {{ chart_data2|safe }};
+
+// Total Profit Chart
+Plotly.newPlot('profit_total_chart', [{
+    x: profitData1.map(d => d.product_name),
+    y: profitData1.map(d => d.profit),
+    type: 'bar',
+    marker: {color: '#10b981'},
+    text: profitData1.map(d => '₹' + Math.round(d.profit).toLocaleString()),
+    textposition: 'outside',
+    hovertemplate: '<b>%{x}</b><br>Profit: ₹%{y:,.0f}<extra></extra>'
+}], {
+    title: 'Top Products by Total Profit',
+    xaxis: {tickangle: -45, title: 'Product'},
+    yaxis: {title: 'Total Profit (₹)'}
+});
+
+// Margin % Chart
+Plotly.newPlot('profit_margin_chart', [{
+    x: profitData2.map(d => d.product_name),
+    y: profitData2.map(d => d.profit_rate),
+    type: 'bar',
+    marker: {color: '#3b82f6'},
+    text: profitData2.map(d => (d.profit_rate).toFixed(1) + '%'),
+    textposition: 'outside',
+    hovertemplate: '<b>%{x}</b><br>Margin: %{y:.1f}%<extra></extra>'
+}], {
+    title: 'Top Products by Profit Margin %',
+    xaxis: {tickangle: -45, title: 'Product'},
+    yaxis: {title: 'Profit Margin (%)'}
+});
+</script>
+{% endblock %}
